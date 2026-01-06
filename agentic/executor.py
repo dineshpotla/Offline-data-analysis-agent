@@ -90,6 +90,24 @@ def execute_plan(plan: Dict[str, Any], ctx: ExecutionContext) -> Any:
         elif action == "outlier_report":
             result = eda.detect_outliers_iqr(ctx.df) if ctx.df is not None else None
 
+        elif action == "plot_correlation":
+            if ctx.df is not None:
+                path = args.get("path", "outputs/correlation.png")
+                result = eda.plot_correlation_heatmap(ctx.df, path=path)
+
+        elif action == "plot_distributions":
+            if ctx.df is not None:
+                path = args.get("path", "outputs/distributions.png")
+                cols = args.get("cols")
+                bins = args.get("bins", 30)
+                result = eda.plot_distributions(ctx.df, cols=cols, path=path, bins=bins)
+
+        elif action == "plot_outliers":
+            if ctx.df is not None:
+                path = args.get("path", "outputs/outliers.png")
+                cols = args.get("cols")
+                result = eda.plot_outlier_boxplots(ctx.df, cols=cols, path=path)
+
         else:
             raise ValueError(f"Unsupported action: {action}")
 

@@ -6,4 +6,6 @@ duckdb
 tabulate
 pypdf
 llama-cpp-python
+matplotlib
+plotly
 

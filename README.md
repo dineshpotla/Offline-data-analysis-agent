@@ -32,6 +32,12 @@ python agent_cli.py "auto explore the dataset" data.csv --auto-eda --rounds 3
 ```
 Outputs plan, feedback, result preview, and report. Session memory defaults to `.agentic_session.jsonl`.
 
+### Plot outputs
+- Correlation heatmap: add action `plot_correlation` (saves to `outputs/correlation.png`).
+- Distributions: `plot_distributions` (histograms for numeric cols, `outputs/distributions.png`).
+- Outliers: `plot_outliers` (boxplots, `outputs/outliers.png`).
+Plots are saved locally (matplotlib Agg backend) to stay offline.
+
 ## How it works
 1) Planner: Phi-4 Mini Q6 produces JSON steps conditioned on schema.  
 2) Coder: emits runnable pandas/DuckDB code for transparency.  

@@ -16,7 +16,7 @@ Schema:
 {schema}
 
 Produce a JSON plan with steps. Each step has:
-- action (one of: load_file, summarize, describe_columns, find_nulls, compute_statistics, filter_rows, run_sql, correlation, summarize_text, categorical_distributions, outlier_report)
+- action (one of: load_file, summarize, describe_columns, find_nulls, compute_statistics, filter_rows, run_sql, correlation, summarize_text, categorical_distributions, outlier_report, plot_correlation, plot_distributions, plot_outliers)
 - args (where needed)
 
 Return JSON only.
