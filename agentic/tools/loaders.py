@@ -6,6 +6,8 @@ import duckdb
 import pandas as pd
 import pyarrow.parquet as pq
 from pypdf import PdfReader
+import hashlib
+import os
 
 
 def load_file(path: str) -> Union[pd.DataFrame, str, sqlite3.Connection]:
@@ -57,3 +59,12 @@ def infer_schema(data: Union[pd.DataFrame, str, sqlite3.Connection]) -> str:
         return f"pdf_text_preview: {preview}"
 
     return "unknown_schema"
+
+
+def file_hash(path: str) -> str:
+    """Return a stable hash for profile caching."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()

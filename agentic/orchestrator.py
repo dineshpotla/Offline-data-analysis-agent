@@ -7,10 +7,11 @@ from agentic import coder, executor, planner, reporter, reviewer
 from agentic.config import (
     MAX_REFLECTION_ROUNDS,
     KNOWLEDGE_MEMORY_PATH,
+    PROFILE_CACHE_PATH,
     SESSION_MEMORY_PATH,
 )
-from agentic.memory import JSONLMemory
-from agentic.tools.loaders import infer_schema, load_file
+from agentic.memory import JSONLMemory, load_profile_cache, save_profile_cache
+from agentic.tools.loaders import file_hash, infer_schema, load_file
 
 
 @dataclass
@@ -28,6 +29,7 @@ class AgenticOrchestrator:
     def __init__(self, session_memory_path: str = SESSION_MEMORY_PATH):
         self.session_memory = JSONLMemory(session_memory_path)
         self.knowledge_memory = JSONLMemory(KNOWLEDGE_MEMORY_PATH)
+        self.profile_cache = load_profile_cache(PROFILE_CACHE_PATH)
 
     def run(
         self,
@@ -38,6 +40,13 @@ class AgenticOrchestrator:
     ) -> OrchestrationResult:
         data = load_file(file_path)
         schema = infer_schema(data)
+        try:
+            h = file_hash(file_path)
+            if h not in self.profile_cache:
+                self.profile_cache[h] = {"schema": schema, "path": file_path}
+                save_profile_cache(PROFILE_CACHE_PATH, self.profile_cache)
+        except Exception:
+            pass
 
         last_plan: Optional[Dict[str, Any]] = None
         last_result: Any = None

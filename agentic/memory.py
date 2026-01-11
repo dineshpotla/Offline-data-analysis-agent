@@ -20,3 +20,15 @@ class JSONLMemory:
         with open(self.path, "r", encoding="utf-8") as f:
             lines = f.readlines()
         return [json.loads(line) for line in lines[-n:]]
+
+
+def load_profile_cache(path: str) -> dict:
+    if not os.path.exists(path):
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_profile_cache(path: str, cache: dict) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(cache, f, indent=2)

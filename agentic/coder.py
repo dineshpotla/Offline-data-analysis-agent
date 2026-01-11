@@ -64,6 +64,24 @@ def generate_code(plan: Dict[str, Any]) -> str:
                 lines.append(f"result = eda.plot_outlier_boxplots(df, cols={cols}, path='{path}')")
             else:
                 lines.append(f"result = eda.plot_outlier_boxplots(df, path='{path}')")
+        elif action == "plotly_correlation":
+            path = args.get("path", "outputs/correlation.html")
+            lines.append(f'result = eda.plotly_correlation_heatmap(df, path="{path}")')
+        elif action == "plotly_distributions":
+            path = args.get("path", "outputs/distributions.html")
+            cols = args.get("cols")
+            bins = args.get("bins", 30)
+            if cols:
+                lines.append(f"result = eda.plotly_distributions(df, cols={cols}, path='{path}', bins={bins})")
+            else:
+                lines.append(f"result = eda.plotly_distributions(df, path='{path}', bins={bins})")
+        elif action == "plotly_outliers":
+            path = args.get("path", "outputs/outliers.html")
+            cols = args.get("cols")
+            if cols:
+                lines.append(f"result = eda.plotly_outliers(df, cols={cols}, path='{path}')")
+            else:
+                lines.append(f"result = eda.plotly_outliers(df, path='{path}')")
         else:
             lines.append(f"# Unsupported action: {action}")
 

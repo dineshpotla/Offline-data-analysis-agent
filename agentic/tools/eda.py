@@ -7,6 +7,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd
+import plotly.express as px
 
 
 def profile_basic(df: pd.DataFrame) -> dict:
@@ -76,6 +77,54 @@ def plot_correlation_heatmap(df: pd.DataFrame, path: str = "outputs/correlation.
     plt.tight_layout()
     plt.savefig(path, bbox_inches="tight")
     plt.close()
+    return path
+
+
+def plotly_correlation_heatmap(df: pd.DataFrame, path: str = "outputs/correlation.html") -> str | None:
+    numeric_df = df.select_dtypes(include="number")
+    corr = numeric_df.corr()
+    if corr.empty:
+        return None
+    _ensure_dir(path)
+    fig = px.imshow(corr, color_continuous_scale="RdBu", zmin=-1, zmax=1)
+    fig.write_html(path, include_plotlyjs="cdn")
+    return path
+
+
+def plotly_distributions(
+    df: pd.DataFrame,
+    cols: list[str] | None = None,
+    path: str = "outputs/distributions.html",
+    bins: int = 30,
+) -> str | None:
+    numeric_df = df.select_dtypes(include="number")
+    if cols:
+        numeric_df = numeric_df[[c for c in cols if c in numeric_df.columns]]
+    if numeric_df.empty:
+        return None
+    _ensure_dir(path)
+    # Create a stacked subplot-like html using facet
+    long_df = numeric_df.melt(var_name="column", value_name="value")
+    fig = px.histogram(long_df, x="value", facet_col="column", facet_col_wrap=3, nbins=bins, opacity=0.8)
+    fig.update_layout(height=400 + 120 * math.ceil(len(numeric_df.columns) / 3), showlegend=False)
+    fig.write_html(path, include_plotlyjs="cdn")
+    return path
+
+
+def plotly_outliers(
+    df: pd.DataFrame,
+    cols: list[str] | None = None,
+    path: str = "outputs/outliers.html",
+) -> str | None:
+    numeric_df = df.select_dtypes(include="number")
+    if cols:
+        numeric_df = numeric_df[[c for c in cols if c in numeric_df.columns]]
+    if numeric_df.empty:
+        return None
+    _ensure_dir(path)
+    long_df = numeric_df.melt(var_name="column", value_name="value")
+    fig = px.box(long_df, x="column", y="value")
+    fig.write_html(path, include_plotlyjs="cdn")
     return path
 
 
