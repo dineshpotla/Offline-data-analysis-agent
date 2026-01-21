@@ -73,10 +73,6 @@ class AgenticOrchestrator:
                 if auto_eda and i == 1
                 else planner.plan_query(query, schema, memory_context=memory_context)
             )
-            # Safety: force intent plan for count/columns/nulls queries
-            intent_plan = planner._intent_plan(query, schema=schema)
-            if intent_plan:
-                plan = intent_plan
             # Fill in file_path for any intent-based plan that leaves it blank
             for step in plan.get("steps", []):
                 if step.get("action") == "load_file":
