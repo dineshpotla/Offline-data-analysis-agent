@@ -16,4 +16,5 @@ nbformat
 nbconvert
 ipykernel
 catboost
+streamlit
 
