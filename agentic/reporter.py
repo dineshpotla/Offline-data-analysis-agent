@@ -8,11 +8,22 @@ from agentic.config import get_llm
 
 def summarize_result(result: Any, query: str, schema: str) -> str:
     llm = get_llm()
+    # Deterministic summaries for common intents
     if isinstance(result, pd.DataFrame):
+        if "row_count" in result.columns and len(result) == 1:
+            count = int(result["row_count"].iloc[0])
+            return f"Row count: {count}"
         preview = result.head().to_markdown()
     elif isinstance(result, pd.Series):
         preview = result.to_frame("value").head().to_markdown()
     elif isinstance(result, dict):
+        # Likely missing-value counts
+        keys = list(result.keys())
+        if keys and all(isinstance(v, (int, float)) for v in result.values()):
+            return (
+                "Missing values per column:\n"
+                + "\n".join([f"- {k}: {v}" for k, v in result.items()])
+            )
         preview = json.dumps(result, indent=2)
     else:
         preview = str(result)[:1200]
