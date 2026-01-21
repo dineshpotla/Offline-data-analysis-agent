@@ -46,7 +46,7 @@ Plots are saved locally (matplotlib Agg backend) to stay offline.
 5) Reporter: LLM-written insights + suggested next questions.  
 6) Reflection: on failure, planner/coder retry (capped by `--rounds`). Session memory logs each round.
 
-Model hooks are defined in `offline_agent.py` (Phi-4 Mini Q6 via `llama-cpp-python`) and reused by the agentic stack. `roberta_embed` is stubbed for future retrieval use.
+Model hooks are defined in `offline_agent.py` (Phi-4 Mini Q6 via `llama-cpp-python` by default; optional LFM2-2.6B via transformers when `AGENT_LLM=LFM2` and `LFM2_PATH` points to a local model). `roberta_embed` is stubbed for future retrieval use.
 
 ## Notes
 - SQLite: pass `.db`/`.sqlite` files; planner can use `run_sql`.  

@@ -31,6 +31,15 @@ try:
 except ImportError:
     Llama = None
 
+# Optional: LFM2-2.6B via transformers (set env AGENT_LLM=LFM2 to use)
+try:
+    import torch  # type: ignore
+    from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
+except ImportError:  # pragma: no cover
+    torch = None
+    AutoModelForCausalLM = None
+    AutoTokenizer = None
+
 # ---------------------------------------------------------------------------
 # Model hooks (replace with your offline models)
 # ---------------------------------------------------------------------------
@@ -78,6 +87,59 @@ def roberta_embed(texts: List[str]) -> List[List[float]]:
     Provided as a stub so you can wire retrieval if desired.
     """
     raise NotImplementedError("Plug in your offline RoBERTa embedding model here.")
+
+
+def lfm2_llm(prompt: str) -> str:
+    """
+    Optional: use LiquidAI LFM2-2.6B (transformers). Set:
+      export AGENT_LLM=LFM2
+      export LFM2_PATH=/path/to/LiquidAI/LFM2-2.6B
+    Model must be available locally (no download here).
+    """
+    if AutoModelForCausalLM is None or AutoTokenizer is None or torch is None:
+        raise ImportError("Install torch and transformers to use LFM2-2.6B.")
+
+    model_path = os.getenv("LFM2_PATH")
+    if not model_path:
+        raise EnvironmentError("Set LFM2_PATH to local model dir for LFM2-2.6B.")
+
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"LFM2_PATH not found: {model_path}")
+
+    if not hasattr(lfm2_llm, "_pipeline"):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+            device_map="auto",
+            local_files_only=True,
+        )
+        lfm2_llm._tokenizer = tokenizer
+        lfm2_llm._model = model
+
+    tokenizer = lfm2_llm._tokenizer
+    model = lfm2_llm._model
+
+    inputs = tokenizer(prompt, return_tensors="pt")
+    inputs = {k: v.to(model.device) for k, v in inputs.items()}
+    with torch.no_grad():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=512,
+            temperature=0.2,
+            do_sample=False,
+        )
+    text = tokenizer.decode(output[0], skip_special_tokens=True)
+    # Return only completion past the prompt if possible
+    return text[len(prompt) :].strip() if text.startswith(prompt) else text
+
+
+def get_llm():
+    """Select LLM based on env AGENT_LLM (LFM2 or PHI4)."""
+    which = os.getenv("AGENT_LLM", "PHI4").upper()
+    if which == "LFM2":
+        return lfm2_llm
+    return phi4_llm
 
 
 # ---------------------------------------------------------------------------

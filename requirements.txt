@@ -8,4 +8,12 @@ pypdf
 llama-cpp-python
 matplotlib
 plotly
+transformers
+torch
+seaborn
+scikit-learn
+nbformat
+nbconvert
+ipykernel
+catboost
 
