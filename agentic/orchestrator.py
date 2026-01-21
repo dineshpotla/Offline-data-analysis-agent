@@ -73,6 +73,12 @@ class AgenticOrchestrator:
                 if auto_eda and i == 1
                 else planner.plan_query(query, schema, memory_context=memory_context)
             )
+            # Fill in file_path for any intent-based plan that leaves it blank
+            for step in plan.get("steps", []):
+                if step.get("action") == "load_file":
+                    args = step.setdefault("args", {})
+                    if not args.get("path"):
+                        args["path"] = file_path
             code = coder.generate_code(plan)
 
             ctx = executor.ExecutionContext()

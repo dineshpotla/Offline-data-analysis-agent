@@ -10,6 +10,10 @@ def summarize_result(result: Any, query: str, schema: str) -> str:
     llm = get_llm()
     if isinstance(result, pd.DataFrame):
         preview = result.head().to_markdown()
+    elif isinstance(result, pd.Series):
+        preview = result.to_frame("value").head().to_markdown()
+    elif isinstance(result, dict):
+        preview = json.dumps(result, indent=2)
     else:
         preview = str(result)[:1200]
     prompt = f"""
