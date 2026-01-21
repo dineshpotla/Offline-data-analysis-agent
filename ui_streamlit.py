@@ -5,10 +5,10 @@ Run:
   streamlit run ui_streamlit.py
 """
 
-import os
 import tempfile
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 from agentic.orchestrator import AgenticOrchestrator
@@ -29,8 +29,8 @@ if "orchestrator" not in st.session_state:
     st.session_state.orchestrator = AgenticOrchestrator()
 if "file_path" not in st.session_state:
     st.session_state.file_path = None
-if "history" not in st.session_state:
-    st.session_state.history = []
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 
 def persist_upload(uploaded_file) -> str:
@@ -45,41 +45,60 @@ if uploaded:
     st.session_state.file_path = persist_upload(uploaded)
     st.success(f"Loaded file: {uploaded.name}")
 
-prompt = st.text_area("Ask a question", placeholder="e.g., summarize dataset, plot correlation, export csv")
-
-col1, col2 = st.columns([1, 1])
-run_btn = col1.button("Run")
-clear_btn = col2.button("Clear history")
-
+st.subheader("Chat")
+show_details = st.sidebar.checkbox("Show plan/details", value=False)
+clear_btn = st.sidebar.button("Clear chat")
 if clear_btn:
-    st.session_state.history = []
+    st.session_state.messages = []
     st.experimental_rerun()
 
-if run_btn:
+
+def render_result(result):
+    if isinstance(result, pd.DataFrame):
+        st.dataframe(result)
+        return
+    if isinstance(result, pd.Series):
+        st.dataframe(result.to_frame("value"))
+        return
+    if isinstance(result, dict):
+        st.json(result)
+        return
+    st.code(str(result)[:4000])
+
+
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        if msg.get("type") == "result":
+            render_result(msg["content"])
+        else:
+            st.markdown(msg["content"])
+
+prompt = st.chat_input("Ask anything about your data…")
+if prompt:
     if not st.session_state.file_path:
         st.error("Please upload a dataset first.")
-    elif not prompt.strip():
-        st.error("Please enter a question.")
     else:
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
         res = st.session_state.orchestrator.run(
-            prompt.strip(),
+            prompt,
             st.session_state.file_path,
             rounds=max_rounds,
-            auto_eda=auto_eda,
+            auto_eda=auto_eda and use_chat,
         )
-        st.session_state.history.append({"prompt": prompt, "result": res})
 
-st.subheader("Results")
-for item in st.session_state.history[::-1]:
-    st.markdown(f"**Q:** {item['prompt']}")
-    res = item["result"]
-    st.markdown(f"**Status:** ok={res.ok}, rounds={res.rounds_used}")
-    st.markdown("**Plan:**")
-    st.json(res.plan)
-    st.markdown("**Feedback:**")
-    st.write(res.feedback)
-    st.markdown("**Result preview:**")
-    st.code(str(res.result)[:2000])
-    if res.report:
-        st.markdown("**Report:**")
-        st.write(res.report)
+        assistant_text = res.report or "Done."
+        st.session_state.messages.append({"role": "assistant", "content": assistant_text})
+        st.session_state.messages.append({"role": "assistant", "type": "result", "content": res.result})
+
+        with st.chat_message("assistant"):
+            st.markdown(assistant_text)
+            render_result(res.result)
+            if show_details:
+                st.markdown("**Plan**")
+                st.json(res.plan)
+                st.markdown(f"**Status:** ok={res.ok}, rounds={res.rounds_used}")
+                st.markdown("**Feedback**")
+                st.write(res.feedback)
