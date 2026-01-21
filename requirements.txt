@@ -9,6 +9,7 @@ matplotlib
 plotly
 transformers
 torch
+huggingface_hub
 seaborn
 scikit-learn
 nbformat

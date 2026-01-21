@@ -16,6 +16,8 @@ Local, framework-free NLQ data analyst that now supports multi-agent orchestrati
   ```bash
   export LFM2_PATH=/path/to/LiquidAI/LFM2-2.6B
   ```
+  If the model is missing, the app will auto-download it from Hugging Face
+  (requires internet). Set `HF_TOKEN` if your environment needs auth.
 No Phi-4 dependency; LFM2 is required.
 
 ## Run (one-shot agent)

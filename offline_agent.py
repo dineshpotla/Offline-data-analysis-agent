@@ -31,10 +31,12 @@ from tabulate import tabulate
 try:
     import torch  # type: ignore
     from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
+    from huggingface_hub import snapshot_download  # type: ignore
 except ImportError:  # pragma: no cover
     torch = None
     AutoModelForCausalLM = None
     AutoTokenizer = None
+    snapshot_download = None
 
 # ---------------------------------------------------------------------------
 # Model hooks (replace with your offline models)
@@ -61,12 +63,10 @@ def lfm2_llm(prompt: str) -> str:
     model_path = os.getenv("LFM2_PATH")
     if not model_path:
         default_path = os.path.join(os.getcwd(), "models", "LFM2-2.6B")
-        model_path = default_path if os.path.exists(default_path) else None
-    if not model_path:
-        raise EnvironmentError(
-            "Set LFM2_PATH to local model dir for LFM2-2.6B "
-            "or place it under ./models/LFM2-2.6B."
-        )
+        model_path = default_path
+
+    if not os.path.exists(model_path):
+        _ensure_lfm2_model(model_path)
 
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"LFM2_PATH not found: {model_path}")
@@ -102,6 +102,20 @@ def lfm2_llm(prompt: str) -> str:
 def get_llm():
     """Return LFM2 LLM callable."""
     return lfm2_llm
+
+
+def _ensure_lfm2_model(local_dir: str) -> None:
+    """Auto-download LFM2-2.6B if missing (requires internet)."""
+    if snapshot_download is None:
+        raise ImportError("Install huggingface_hub to auto-download LFM2-2.6B.")
+    os.makedirs(local_dir, exist_ok=True)
+    snapshot_download(
+        repo_id="LiquidAI/LFM2-2.6B",
+        local_dir=local_dir,
+        local_dir_use_symlinks=False,
+        resume_download=True,
+        token=os.getenv("HF_TOKEN"),
+    )
 
 
 # ---------------------------------------------------------------------------
