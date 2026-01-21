@@ -27,12 +27,7 @@ import pyarrow.parquet as pq
 from pypdf import PdfReader
 from tabulate import tabulate
 
-try:
-    from llama_cpp import Llama
-except ImportError:
-    Llama = None
-
-# LFM2-2.6B via transformers (default when AGENT_LLM is unset)
+# LFM2-2.6B via transformers (default)
 try:
     import torch  # type: ignore
     from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
@@ -46,42 +41,6 @@ except ImportError:  # pragma: no cover
 # ---------------------------------------------------------------------------
 
 
-def phi4_llm(prompt: str) -> str:
-    """
-    Call local Phi-4 Mini Q6 via llama-cpp-python.
-
-    Set env PHI4_MINI_Q6_PATH to the GGUF file path.
-    Example: export PHI4_MINI_Q6_PATH=~/models/phi-4-mini-q6.gguf
-    """
-    if Llama is None:
-        raise ImportError(
-            "llama-cpp-python not installed. Install with `pip install llama-cpp-python`."
-        )
-
-    model_path = os.getenv("PHI4_MINI_Q6_PATH")
-    if not model_path:
-        raise EnvironmentError("Set PHI4_MINI_Q6_PATH to your phi-4-mini-q6 GGUF file.")
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model file not found at {model_path}")
-
-    # Lazy init to avoid reload per call
-    if not hasattr(phi4_llm, "_llm"):
-        phi4_llm._llm = Llama(
-            model_path=model_path,
-            n_ctx=4096,
-            n_threads=os.cpu_count() or 4,
-            verbose=False,
-        )
-
-    llm: Llama = phi4_llm._llm
-    response = llm.create_chat_completion(
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
-        max_tokens=512,
-    )
-    return response["choices"][0]["message"]["content"]
-
-
 def roberta_embed(texts: List[str]) -> List[List[float]]:
     """
     Optional: plug your offline RoBERTa embedding model here.
@@ -93,7 +52,6 @@ def roberta_embed(texts: List[str]) -> List[List[float]]:
 def lfm2_llm(prompt: str) -> str:
     """
     Optional: use LiquidAI LFM2-2.6B (transformers). Set:
-      export AGENT_LLM=LFM2
       export LFM2_PATH=/path/to/LiquidAI/LFM2-2.6B
     Model must be available locally (no download here).
     """
@@ -142,11 +100,8 @@ def lfm2_llm(prompt: str) -> str:
 
 
 def get_llm():
-    """Select LLM based on env AGENT_LLM (default LFM2, fallback PHI4)."""
-    which = os.getenv("AGENT_LLM", "LFM2").upper()
-    if which == "LFM2":
-        return lfm2_llm
-    return phi4_llm
+    """Return LFM2 LLM callable."""
+    return lfm2_llm
 
 
 # ---------------------------------------------------------------------------

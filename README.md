@@ -1,6 +1,6 @@
 # Offline Agentic EDA Platform
 
-Local, framework-free NLQ data analyst that now supports multi-agent orchestration (planner → coder → executor → reviewer → reporter) with reflection loops and memory. Powered by Phi-4 Mini Q6 (via `llama-cpp-python`). Supports CSV, Excel, JSON, Parquet, SQLite DBs, and PDF text.
+Local, framework-free NLQ data analyst that now supports multi-agent orchestration (planner → coder → executor → reviewer → reporter) with reflection loops and memory. Powered by LFM2-2.6B (via transformers). Supports CSV, Excel, JSON, Parquet, SQLite DBs, and PDF text.
 
 ## Setup
 - Python 3.10+ recommended.
@@ -16,11 +16,7 @@ Local, framework-free NLQ data analyst that now supports multi-agent orchestrati
   ```bash
   export LFM2_PATH=/path/to/LiquidAI/LFM2-2.6B
   ```
-- Optional fallback: Phi-4 Mini Q6 GGUF and point to it:
-  ```bash
-  export PHI4_MINI_Q6_PATH=~/models/phi-4-mini-q6.gguf
-  ```
-  Install llama-cpp if missing: `pip install llama-cpp-python`.
+No Phi-4 dependency; LFM2 is required.
 
 ## Run (one-shot agent)
 ```bash
@@ -53,14 +49,14 @@ Use follow-ups like "now filter outliers" or "save report to outputs/report.txt"
 Plots are saved locally (matplotlib Agg backend) to stay offline.
 
 ## How it works
-1) Planner: Phi-4 Mini Q6 produces JSON steps conditioned on schema.  
+1) Planner: LFM2-2.6B produces JSON steps conditioned on schema.  
 2) Coder: emits runnable pandas/DuckDB code for transparency.  
 3) Executor: runs plan safely (summaries, filters, SQL, stats, correlations, outliers).  
 4) Reviewer: validates output (non-empty, sane types).  
 5) Reporter: LLM-written insights + suggested next questions.  
 6) Reflection: on failure, planner/coder retry (capped by `--rounds`). Session memory logs each round.
 
-Model hooks are defined in `offline_agent.py` (LFM2-2.6B via transformers by default; Phi-4 Mini Q6 fallback via `llama-cpp-python` when `AGENT_LLM=PHI4`). `roberta_embed` is stubbed for future retrieval use.
+Model hooks are defined in `offline_agent.py` (LFM2-2.6B via transformers). `roberta_embed` is stubbed for future retrieval use.
 
 ## Notes
 - SQLite: pass `.db`/`.sqlite` files; planner can use `run_sql`.  
