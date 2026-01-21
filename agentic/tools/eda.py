@@ -8,6 +8,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd
 import plotly.express as px
+from typing import Optional
 
 
 def profile_basic(df: pd.DataFrame) -> dict:
@@ -61,7 +62,7 @@ def _ensure_dir(path: str) -> None:
         os.makedirs(dirname, exist_ok=True)
 
 
-def plot_correlation_heatmap(df: pd.DataFrame, path: str = "outputs/correlation.png") -> str | None:
+def plot_correlation_heatmap(df: pd.DataFrame, path: str = "outputs/correlation.png") -> Optional[str]:
     numeric_df = df.select_dtypes(include="number")
     corr = numeric_df.corr()
     if corr.empty:
@@ -80,7 +81,7 @@ def plot_correlation_heatmap(df: pd.DataFrame, path: str = "outputs/correlation.
     return path
 
 
-def plotly_correlation_heatmap(df: pd.DataFrame, path: str = "outputs/correlation.html") -> str | None:
+def plotly_correlation_heatmap(df: pd.DataFrame, path: str = "outputs/correlation.html") -> Optional[str]:
     numeric_df = df.select_dtypes(include="number")
     corr = numeric_df.corr()
     if corr.empty:
@@ -93,10 +94,10 @@ def plotly_correlation_heatmap(df: pd.DataFrame, path: str = "outputs/correlatio
 
 def plotly_distributions(
     df: pd.DataFrame,
-    cols: list[str] | None = None,
+    cols: Optional[list[str]] = None,
     path: str = "outputs/distributions.html",
     bins: int = 30,
-) -> str | None:
+) -> Optional[str]:
     numeric_df = df.select_dtypes(include="number")
     if cols:
         numeric_df = numeric_df[[c for c in cols if c in numeric_df.columns]]
@@ -113,9 +114,9 @@ def plotly_distributions(
 
 def plotly_outliers(
     df: pd.DataFrame,
-    cols: list[str] | None = None,
+    cols: Optional[list[str]] = None,
     path: str = "outputs/outliers.html",
-) -> str | None:
+) -> Optional[str]:
     numeric_df = df.select_dtypes(include="number")
     if cols:
         numeric_df = numeric_df[[c for c in cols if c in numeric_df.columns]]
@@ -130,10 +131,10 @@ def plotly_outliers(
 
 def plot_distributions(
     df: pd.DataFrame,
-    cols: list[str] | None = None,
+    cols: Optional[list[str]] = None,
     path: str = "outputs/distributions.png",
     bins: int = 30,
-) -> str | None:
+) -> Optional[str]:
     numeric_df = df.select_dtypes(include="number")
     if numeric_df.empty:
         return None
@@ -159,9 +160,9 @@ def plot_distributions(
 
 def plot_outlier_boxplots(
     df: pd.DataFrame,
-    cols: list[str] | None = None,
+    cols: Optional[list[str]] = None,
     path: str = "outputs/outliers.png",
-) -> str | None:
+) -> Optional[str]:
     numeric_df = df.select_dtypes(include="number")
     if numeric_df.empty:
         return None
