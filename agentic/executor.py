@@ -129,6 +129,13 @@ def execute_plan(plan: Dict[str, Any], ctx: ExecutionContext) -> Any:
                 cols = args.get("cols")
                 result = eda.plotly_outliers(ctx.df, cols=cols, path=path)
 
+        elif action == "run_python":
+            code = args.get("code", "")
+            if not code:
+                raise ValueError("run_python requires 'code'")
+            outcome = safe_exec(code, ctx)
+            result = outcome.get("result")
+
         else:
             raise ValueError(f"Unsupported action: {action}")
 

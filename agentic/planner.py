@@ -1,11 +1,12 @@
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from agentic.config import get_llm
 
 
-def plan_query(user_query: str, schema: str) -> Dict[str, Any]:
+def plan_query(user_query: str, schema: str, memory_context: Optional[str] = None) -> Dict[str, Any]:
     llm = get_llm()
+    memory_block = f"\nPrevious context:\n{memory_context}\n" if memory_context else ""
     prompt = f"""
 You are a Planner Agent for offline EDA.
 
@@ -14,10 +15,12 @@ User request:
 
 Schema:
 {schema}
+{memory_block}
 
 Produce a JSON plan with steps. Each step has:
-- action (one of: load_file, summarize, describe_columns, find_nulls, compute_statistics, filter_rows, run_sql, correlation, summarize_text, categorical_distributions, outlier_report, plot_correlation, plot_distributions, plot_outliers, plotly_correlation, plotly_distributions, plotly_outliers)
+- action (one of: load_file, summarize, describe_columns, find_nulls, compute_statistics, filter_rows, run_sql, correlation, summarize_text, categorical_distributions, outlier_report, plot_correlation, plot_distributions, plot_outliers, plotly_correlation, plotly_distributions, plotly_outliers, run_python)
 - args (where needed)
+Use run_python when the user asks to generate or save files beyond the built-in actions.
 
 Return JSON only.
 """

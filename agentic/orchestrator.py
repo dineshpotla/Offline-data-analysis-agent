@@ -31,6 +31,17 @@ class AgenticOrchestrator:
         self.knowledge_memory = JSONLMemory(KNOWLEDGE_MEMORY_PATH)
         self.profile_cache = load_profile_cache(PROFILE_CACHE_PATH)
 
+    def _build_memory_context(self, limit: int = 8) -> str:
+        """Build a short conversation context from session memory."""
+        items = self.session_memory.read_last(limit)
+        lines = []
+        for item in items:
+            if item.get("type") == "message":
+                role = item.get("role", "user")
+                content = item.get("content", "")
+                lines.append(f"{role}: {content}")
+        return "\n".join(lines).strip()
+
     def run(
         self,
         query: str,
@@ -53,11 +64,14 @@ class AgenticOrchestrator:
         last_feedback = ""
         code = ""
 
+        memory_context = self._build_memory_context()
+        self.session_memory.append({"type": "message", "role": "user", "content": query})
+
         for i in range(1, rounds + 1):
             plan = (
                 planner.plan_auto_eda(file_path)
                 if auto_eda and i == 1
-                else planner.plan_query(query, schema)
+                else planner.plan_query(query, schema, memory_context=memory_context)
             )
             code = coder.generate_code(plan)
 
@@ -85,6 +99,9 @@ class AgenticOrchestrator:
 
             if ok:
                 report = reporter.render_report(result, query, schema)
+                self.session_memory.append(
+                    {"type": "message", "role": "assistant", "content": report}
+                )
                 return OrchestrationResult(
                     ok=True,
                     plan=plan,
@@ -110,21 +127,55 @@ class AgenticOrchestrator:
 
 def run_cli():
     parser = argparse.ArgumentParser(description="Agentic offline EDA platform")
-    parser.add_argument("query", help="Natural language request")
-    parser.add_argument("file_path", help="Path to data file")
+    parser.add_argument("query", nargs="?", help="Natural language request")
+    parser.add_argument("file_path", nargs="?", help="Path to data file")
+    parser.add_argument("--file", dest="file_path_opt", help="Path to data file")
     parser.add_argument("--rounds", type=int, default=MAX_REFLECTION_ROUNDS)
     parser.add_argument("--auto-eda", action="store_true", help="Run autonomous EDA plan first")
+    parser.add_argument("--chat", action="store_true", help="Start interactive chat loop")
     args = parser.parse_args()
 
     orchestrator = AgenticOrchestrator()
-    res = orchestrator.run(args.query, args.file_path, rounds=args.rounds, auto_eda=args.auto_eda)
+    file_path = args.file_path_opt or args.file_path
+    if not file_path:
+        raise ValueError("file_path is required (use positional or --file)")
+    if args.chat:
+        print("Interactive mode. Type 'exit' to quit.")
+        auto_eda_pending = True
+        while True:
+            if auto_eda_pending and args.query:
+                query = args.query
+            else:
+                query = input("> ").strip()
+            if not query or query.lower() in {"exit", "quit"}:
+                break
+            res = orchestrator.run(
+                query,
+                file_path,
+                rounds=args.rounds,
+                auto_eda=args.auto_eda and auto_eda_pending,
+            )
+            auto_eda_pending = False
+            print(f"Rounds used: {res.rounds_used}, ok={res.ok}")
+            print("Plan:")
+            print(json.dumps(res.plan, indent=2))
+            print("Feedback:", res.feedback)
+            print("Result preview:")
+            print(str(res.result)[:1200])
+            if res.report:
+                print("\nReport:")
+                print(res.report)
+    else:
+        if not args.query:
+            raise ValueError("query is required unless --chat is set")
+        res = orchestrator.run(args.query, file_path, rounds=args.rounds, auto_eda=args.auto_eda)
 
-    print(f"Rounds used: {res.rounds_used}, ok={res.ok}")
-    print("Plan:")
-    print(json.dumps(res.plan, indent=2))
-    print("Feedback:", res.feedback)
-    print("Result preview:")
-    print(str(res.result)[:1200])
-    if res.report:
-        print("\nReport:")
-        print(res.report)
+        print(f"Rounds used: {res.rounds_used}, ok={res.ok}")
+        print("Plan:")
+        print(json.dumps(res.plan, indent=2))
+        print("Feedback:", res.feedback)
+        print("Result preview:")
+        print(str(res.result)[:1200])
+        if res.report:
+            print("\nReport:")
+            print(res.report)

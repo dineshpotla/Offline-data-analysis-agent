@@ -1,12 +1,13 @@
 """
-Offline data-analysis agent with local planning (Phi-4 placeholder),
+Offline data-analysis agent with local planning (LFM2-2.6B default),
 execution over tabular/text data, and simple verification.
 
 Supported inputs: CSV, Excel, JSON, Parquet, SQLite DB, PDF.
 No internet or external frameworks required.
 
 Quick start:
-  pip install pandas numpy pyarrow openpyxl duckdb tabulate pypdf
+  pip install -r requirements.txt
+  export LFM2_PATH=/path/to/LiquidAI/LFM2-2.6B
   python offline_agent.py "top 5 customers by revenue" sales.csv
 """
 
@@ -31,7 +32,7 @@ try:
 except ImportError:
     Llama = None
 
-# Optional: LFM2-2.6B via transformers (set env AGENT_LLM=LFM2 to use)
+# LFM2-2.6B via transformers (default when AGENT_LLM is unset)
 try:
     import torch  # type: ignore
     from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
@@ -101,7 +102,13 @@ def lfm2_llm(prompt: str) -> str:
 
     model_path = os.getenv("LFM2_PATH")
     if not model_path:
-        raise EnvironmentError("Set LFM2_PATH to local model dir for LFM2-2.6B.")
+        default_path = os.path.join(os.getcwd(), "models", "LFM2-2.6B")
+        model_path = default_path if os.path.exists(default_path) else None
+    if not model_path:
+        raise EnvironmentError(
+            "Set LFM2_PATH to local model dir for LFM2-2.6B "
+            "or place it under ./models/LFM2-2.6B."
+        )
 
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"LFM2_PATH not found: {model_path}")
@@ -135,8 +142,8 @@ def lfm2_llm(prompt: str) -> str:
 
 
 def get_llm():
-    """Select LLM based on env AGENT_LLM (LFM2 or PHI4)."""
-    which = os.getenv("AGENT_LLM", "PHI4").upper()
+    """Select LLM based on env AGENT_LLM (default LFM2, fallback PHI4)."""
+    which = os.getenv("AGENT_LLM", "LFM2").upper()
     if which == "LFM2":
         return lfm2_llm
     return phi4_llm
@@ -204,7 +211,7 @@ def infer_schema(data: Union[pd.DataFrame, str, sqlite3.Connection]) -> str:
 
 
 def plan_with_phi4(user_query: str, schema: str) -> Dict[str, Any]:
-    """Ask Phi-4 to produce a JSON plan."""
+    """Ask the configured LLM to produce a JSON plan."""
     prompt = f"""
 You are an offline data-analysis agent.
 
@@ -231,7 +238,7 @@ targets: df for tabular, text for pdf
 
 Include arguments where needed. Return JSON only.
 """
-    raw = phi4_llm(prompt)
+    raw = get_llm()(prompt)
     try:
         return json.loads(raw)
     except json.JSONDecodeError as exc:

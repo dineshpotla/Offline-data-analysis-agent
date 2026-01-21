@@ -1,6 +1,6 @@
 import os
 
-from offline_agent import get_llm  # reuse the LLM selector (Phi-4 or LFM2)
+from offline_agent import get_llm as offline_get_llm  # reuse the LLM selector
 
 # Default max rounds for reflection
 MAX_REFLECTION_ROUNDS = int(os.getenv("AGENTIC_MAX_ROUNDS", "3"))
@@ -18,5 +18,5 @@ PLANNER_MAX_CONTEXT = 4096
 
 
 def get_llm():
-    """Return the configured LLM callable (Phi-4 Mini Q6 default, LFM2 optional)."""
-    return get_llm()
+    """Return the configured LLM callable (LFM2 default, Phi-4 optional)."""
+    return offline_get_llm()

@@ -1,6 +1,6 @@
 # Offline Agentic EDA Platform
 
-Local, framework-free NLQ data analyst that now supports multi-agent orchestration (planner → coder → executor → reviewer → reporter) with reflection loops and memory. Powered by Phi-4 Mini Q6 (via `llama-cpp-python`). Supports CSV, Excel, JSON, Parquet, SQLite DBs, and PDF text.
+Local, framework-free NLQ data analyst that now supports multi-agent orchestration (planner → coder → executor → reviewer → reporter) with reflection loops and memory. Powered by LFM2-2.6B (via transformers). Supports CSV, Excel, JSON, Parquet, SQLite DBs, and PDF text.
 
 ## Setup
 - Python 3.10+ recommended.
@@ -39,7 +39,7 @@ Outputs plan, feedback, result preview, and report. Session memory defaults to `
 Plots are saved locally (matplotlib Agg backend) to stay offline.
 
 ## How it works
-1) Planner: Phi-4 Mini Q6 produces JSON steps conditioned on schema.  
+1) Planner: LFM2-2.6B produces JSON steps conditioned on schema.  
 2) Coder: emits runnable pandas/DuckDB code for transparency.  
 3) Executor: runs plan safely (summaries, filters, SQL, stats, correlations, outliers).  
 4) Reviewer: validates output (non-empty, sane types).  

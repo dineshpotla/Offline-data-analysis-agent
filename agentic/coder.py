@@ -82,6 +82,10 @@ def generate_code(plan: Dict[str, Any]) -> str:
                 lines.append(f"result = eda.plotly_outliers(df, cols={cols}, path='{path}')")
             else:
                 lines.append(f"result = eda.plotly_outliers(df, path='{path}')")
+        elif action == "run_python":
+            code = args.get("code", "")
+            lines.append("# Custom python code provided by planner")
+            lines.append(code)
         else:
             lines.append(f"# Unsupported action: {action}")
 
