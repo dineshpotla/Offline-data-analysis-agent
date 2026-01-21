@@ -15,6 +15,17 @@ def summarize_result(result: Any, query: str, schema: str) -> str:
             return f"Row count: {count}"
         preview = result.head().to_markdown()
     elif isinstance(result, pd.Series):
+        # Detect missing-value counts (non-negative integers)
+        if pd.api.types.is_integer_dtype(result) and (result >= 0).all():
+            nonzero = result[result > 0]
+            if nonzero.empty:
+                return "Missing values: none (all columns have 0 missing values)."
+            lines = "\n".join([f"- {k}: {int(v)}" for k, v in nonzero.items()])
+            return f"Missing values per column:\n{lines}"
+        # Detect column dtypes (describe_columns)
+        if pd.api.types.is_object_dtype(result):
+            lines = "\n".join([f"- {k}: {v}" for k, v in result.items()])
+            return f"Columns and dtypes:\n{lines}"
         preview = result.to_frame("value").head().to_markdown()
     elif isinstance(result, dict):
         # Likely missing-value counts

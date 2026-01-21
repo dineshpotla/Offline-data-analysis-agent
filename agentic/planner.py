@@ -28,6 +28,14 @@ def _intent_plan(user_query: str) -> Optional[Dict[str, Any]]:
                 {"action": "find_nulls"},
             ]
         }
+    if re.search(r"\b(what is this file|describe dataset|about this file|what is this data)\b", q):
+        return {
+            "steps": [
+                {"action": "load_file", "args": {"path": ""}},
+                {"action": "describe_columns"},
+                {"action": "compute_statistics"},
+            ]
+        }
     return None
 
 
