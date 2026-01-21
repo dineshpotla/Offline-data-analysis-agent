@@ -10,6 +10,7 @@ plotly
 transformers
 torch
 huggingface_hub
+accelerate
 seaborn
 scikit-learn
 nbformat

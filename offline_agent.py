@@ -38,6 +38,12 @@ except ImportError:  # pragma: no cover
     AutoTokenizer = None
     snapshot_download = None
 
+try:
+    import accelerate  # type: ignore  # noqa: F401
+    _HAS_ACCELERATE = True
+except ImportError:
+    _HAS_ACCELERATE = False
+
 # ---------------------------------------------------------------------------
 # Model hooks (replace with your offline models)
 # ---------------------------------------------------------------------------
@@ -73,12 +79,15 @@ def lfm2_llm(prompt: str) -> str:
 
     if not hasattr(lfm2_llm, "_pipeline"):
         tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
+        device_map = "auto" if _HAS_ACCELERATE else None
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-            device_map="auto",
+            device_map=device_map,
             local_files_only=True,
         )
+        if device_map is None:
+            model = model.to("cpu")
         lfm2_llm._tokenizer = tokenizer
         lfm2_llm._model = model
 

@@ -21,6 +21,13 @@ def _intent_plan(user_query: str) -> Optional[Dict[str, Any]]:
                 {"action": "describe_columns"},
             ]
         }
+    if re.search(r"\b(missing|null|na)\b", q):
+        return {
+            "steps": [
+                {"action": "load_file", "args": {"path": ""}},
+                {"action": "find_nulls"},
+            ]
+        }
     return None
 
 
