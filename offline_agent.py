@@ -91,7 +91,7 @@ def lfm2_llm(prompt: str) -> str:
 
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            torch_dtype=dtype,
+            dtype=dtype,
             device_map=None,
             local_files_only=True,
         ).to(device)
