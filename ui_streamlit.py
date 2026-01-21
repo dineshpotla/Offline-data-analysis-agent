@@ -95,7 +95,8 @@ if prompt:
 
         with st.chat_message("assistant"):
             st.markdown(assistant_text)
-            render_result(res.result)
+            with st.expander("Show raw result", expanded=False):
+                render_result(res.result)
             if show_details:
                 st.markdown("**Plan**")
                 st.json(res.plan)
